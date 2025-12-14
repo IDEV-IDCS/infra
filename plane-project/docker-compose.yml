@@ -1,17 +1,23 @@
 version: '3.8'
 
 services:
-  plane-web:
-    image: makeplane/plane-frontend:latest
-    container_name: plane-web
-    restart: unless-stopped
-    expose:
-      - "3000"
+  plane-migrator:
+    image: makeplane/plane-backend:latest
+    container_name: plane-migrator
+    restart: "no"
+    command: ./bin/docker-entrypoint-migrator.sh
     environment:
       - WEB_URL=https://plane.devcode.live
-    depends_on:
-      plane-api:
-        condition: service_healthy
+      - DEBUG=0
+      - DJANGO_SETTINGS_MODULE=plane.settings.production
+      - DATABASE_URL=postgresql://plane_user:plane_password@postgres_host:5432/plane_db
+      - REDIS_URL=redis://redis_host:6379/0
+      - SECRET_KEY=your-32-char-secret-key-here
+      - USE_MINIO=0
+      - AWS_REGION=ap-south-1
+      - AWS_ACCESS_KEY_ID=YOUR_AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY=YOUR_AWS_SECRET_ACCESS_KEY
+      - AWS_S3_BUCKET_NAME=qpg-plane
 
   plane-api:
     image: makeplane/plane-backend:latest
@@ -32,11 +38,26 @@ services:
       - AWS_ACCESS_KEY_ID=YOUR_AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY=YOUR_AWS_SECRET_ACCESS_KEY
       - AWS_S3_BUCKET_NAME=qpg-plane
+    depends_on:
+      plane-migrator:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/instances/"]
       interval: 30s
       timeout: 10s
       retries: 5
+
+  plane-web:
+    image: makeplane/plane-frontend:latest
+    container_name: plane-web
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      - WEB_URL=https://plane.devcode.live
+    depends_on:
+      plane-api:
+        condition: service_healthy
 
   plane-worker:
     image: makeplane/plane-backend:latest
