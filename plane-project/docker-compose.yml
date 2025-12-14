@@ -1,16 +1,35 @@
 version: '3.8'
 
+x-app-env: &app-env
+  WEB_URL: ${WEB_URL:-http://localhost}
+  DEBUG: ${DEBUG:-0}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+  GUNICORN_WORKERS: 1
+  USE_MINIO: ${USE_MINIO:-0}
+  DATABASE_URL: ${DATABASE_URL}
+  SECRET_KEY: ${SECRET_KEY}
+  API_KEY_RATE_LIMIT: ${API_KEY_RATE_LIMIT:-60/minute}
+  AWS_REGION: ${AWS_REGION}
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+  AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+
+x-redis-env: &redis-env
+  REDIS_HOST: ${REDIS_HOST}
+  REDIS_PORT: ${REDIS_PORT:-6379}
+  REDIS_URL: ${REDIS_URL}
+
 services:
-  plane-migrator:
-    image: makeplane/plane-backend:latest
-    container_name: plane-migrator
-    restart: "no"
-    command: ./bin/docker-entrypoint-migrator.sh
+  plane-web:
+    image: makeplane/plane-frontend:latest
+    container_name: plane-web
+    restart: unless-stopped
+    expose:
+      - "3000"
     environment:
-      - DATABASE_URL=postgresql://username:password@postgres-host:5432/plane_db
-      - REDIS_URL=redis://default:password@redis-host:6379/0
-      - REDIS_HOST=redis-host
-      - REDIS_PORT=6379
+      <<: *app-env
+    depends_on:
+      - plane-api
 
   plane-api:
     image: makeplane/plane-backend:latest
@@ -20,28 +39,14 @@ services:
       - "8000"
     command: ./bin/docker-entrypoint-api.sh
     environment:
-      - DATABASE_URL=postgresql://username:password@postgres-host:5432/plane_db
-      - REDIS_URL=redis://default:password@redis-host:6379/0
-      - REDIS_HOST=redis-host
-      - REDIS_PORT=6379
+      <<: [*app-env, *redis-env]
     depends_on:
-      plane-migrator:
-        condition: service_completed_successfully
+      - plane-migrator
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/instances/"]
       interval: 30s
       timeout: 10s
       retries: 5
-
-  plane-web:
-    image: makeplane/plane-frontend:latest
-    container_name: plane-web
-    restart: unless-stopped
-    expose:
-      - "3000"
-    depends_on:
-      plane-api:
-        condition: service_healthy
 
   plane-worker:
     image: makeplane/plane-backend:latest
@@ -49,13 +54,9 @@ services:
     restart: unless-stopped
     command: ./bin/docker-entrypoint-worker.sh
     environment:
-      - DATABASE_URL=postgresql://username:password@postgres-host:5432/plane_db
-      - REDIS_URL=redis://default:password@redis-host:6379/0
-      - REDIS_HOST=redis-host
-      - REDIS_PORT=6379
+      <<: [*app-env, *redis-env]
     depends_on:
-      plane-api:
-        condition: service_healthy
+      - plane-api
 
   plane-beat-worker:
     image: makeplane/plane-backend:latest
@@ -63,10 +64,14 @@ services:
     restart: unless-stopped
     command: ./bin/docker-entrypoint-beat.sh
     environment:
-      - DATABASE_URL=postgresql://username:password@postgres-host:5432/plane_db
-      - REDIS_URL=redis://default:password@redis-host:6379/0
-      - REDIS_HOST=redis-host
-      - REDIS_PORT=6379
+      <<: [*app-env, *redis-env]
     depends_on:
-      plane-api:
-        condition: service_healthy
+      - plane-api
+
+  plane-migrator:
+    image: makeplane/plane-backend:latest
+    container_name: plane-migrator
+    restart: "no"
+    command: ./bin/docker-entrypoint-migrator.sh
+    environment:
+      <<: [*app-env, *redis-env]
