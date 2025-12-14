@@ -11,8 +11,6 @@ services:
       - WEB_URL=https://plane.devcode.live
     depends_on:
       - plane-api
-    networks:
-      - plane
 
   plane-api:
     image: makeplane/plane-backend:latest
@@ -33,8 +31,6 @@ services:
       - AWS_ACCESS_KEY_ID=your-access-key
       - AWS_SECRET_ACCESS_KEY=your-secret-key
       - AWS_S3_BUCKET_NAME=qpg-plane
-    networks:
-      - plane
 
   plane-worker:
     image: makeplane/plane-backend:latest
@@ -55,8 +51,6 @@ services:
       - AWS_S3_BUCKET_NAME=qpg-plane
     depends_on:
       - plane-api
-    networks:
-      - plane
 
   plane-beat-worker:
     image: makeplane/plane-backend:latest
@@ -72,9 +66,3 @@ services:
       - SECRET_KEY=your-secret-key-change-this
     depends_on:
       - plane-api
-    networks:
-      - plane
-
-networks:
-  plane:
-    driver: bridge
