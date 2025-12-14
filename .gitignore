@@ -1,0 +1,14 @@
+# Environment files
+.env
+*.env
+!.env.example
+
+# Docker volumes
+**/data/
+**/logs/
+
+# Temporary files
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
