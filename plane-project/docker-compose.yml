@@ -10,7 +10,8 @@ services:
     environment:
       - WEB_URL=https://plane.devcode.live
     depends_on:
-      - plane-api
+      plane-api:
+        condition: service_healthy
 
   plane-api:
     image: makeplane/plane-backend:latest
@@ -23,14 +24,19 @@ services:
       - WEB_URL=https://plane.devcode.live
       - DEBUG=0
       - DJANGO_SETTINGS_MODULE=plane.settings.production
-      - DATABASE_URL=postgresql://username:password@your-postgres-host:5432/plane_db
-      - REDIS_URL=redis://your-redis-host:6379/0
-      - SECRET_KEY=your-secret-key-change-this
+      - DATABASE_URL=postgresql://plane_user:plane_password@postgres_host:5432/plane_db
+      - REDIS_URL=redis://redis_host:6379/0
+      - SECRET_KEY=your-32-char-secret-key-here
       - USE_MINIO=0
       - AWS_REGION=ap-south-1
-      - AWS_ACCESS_KEY_ID=your-access-key
-      - AWS_SECRET_ACCESS_KEY=your-secret-key
+      - AWS_ACCESS_KEY_ID=YOUR_AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY=YOUR_AWS_SECRET_ACCESS_KEY
       - AWS_S3_BUCKET_NAME=qpg-plane
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/instances/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   plane-worker:
     image: makeplane/plane-backend:latest
@@ -41,16 +47,17 @@ services:
       - WEB_URL=https://plane.devcode.live
       - DEBUG=0
       - DJANGO_SETTINGS_MODULE=plane.settings.production
-      - DATABASE_URL=postgresql://username:password@your-postgres-host:5432/plane_db
-      - REDIS_URL=redis://your-redis-host:6379/0
-      - SECRET_KEY=your-secret-key-change-this
+      - DATABASE_URL=postgresql://plane_user:plane_password@postgres_host:5432/plane_db
+      - REDIS_URL=redis://redis_host:6379/0
+      - SECRET_KEY=your-32-char-secret-key-here
       - USE_MINIO=0
       - AWS_REGION=ap-south-1
-      - AWS_ACCESS_KEY_ID=your-access-key
-      - AWS_SECRET_ACCESS_KEY=your-secret-key
+      - AWS_ACCESS_KEY_ID=YOUR_AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY=YOUR_AWS_SECRET_ACCESS_KEY
       - AWS_S3_BUCKET_NAME=qpg-plane
     depends_on:
-      - plane-api
+      plane-api:
+        condition: service_healthy
 
   plane-beat-worker:
     image: makeplane/plane-backend:latest
@@ -61,8 +68,9 @@ services:
       - WEB_URL=https://plane.devcode.live
       - DEBUG=0
       - DJANGO_SETTINGS_MODULE=plane.settings.production
-      - DATABASE_URL=postgresql://username:password@your-postgres-host:5432/plane_db
-      - REDIS_URL=redis://your-redis-host:6379/0
-      - SECRET_KEY=your-secret-key-change-this
+      - DATABASE_URL=postgresql://plane_user:plane_password@postgres_host:5432/plane_db
+      - REDIS_URL=redis://redis_host:6379/0
+      - SECRET_KEY=your-32-char-secret-key-here
     depends_on:
-      - plane-api
+      plane-api:
+        condition: service_healthy
