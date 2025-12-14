@@ -155,8 +155,7 @@ services:
 
   migrator:
     image: artifacts.plane.so/makeplane/plane-backend:${APP_RELEASE:-v1.2.1}
-    # command: ./bin/docker-entrypoint-migrator.sh
-    command: sleep infinity
+    command: ./bin/docker-entrypoint-migrator.sh
     deploy:
       replicas: 1
       restart_policy:
