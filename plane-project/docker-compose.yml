@@ -71,7 +71,7 @@ services:
   plane-migrator:
     image: makeplane/plane-backend:latest
     container_name: plane-migrator
-    restart: "no"
+    restart: on-failure
     command: ./bin/docker-entrypoint-migrator.sh
     environment:
       <<: [*app-env, *redis-env]
