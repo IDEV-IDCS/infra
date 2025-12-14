@@ -3,6 +3,11 @@
 *.env
 !.env.example
 
+# Sensitive documentation
+**/S3-CREDENTIALS.md
+**/CREDENTIALS.md
+**/*-CREDENTIALS.md
+
 # Docker volumes
 **/data/
 **/logs/
